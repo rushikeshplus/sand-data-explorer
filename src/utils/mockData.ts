@@ -123,6 +123,174 @@ export const censusData = [
   }
 ];
 
+// Village Gram Panchayat data
+export const gramPanchayatData = [
+  {
+    state: "Uttar Pradesh",
+    district: "Varanasi",
+    gramPanchayat: "Araji Line",
+    population: 2500,
+    householdCount: 490,
+    agricultureLand: 320, // in hectares
+    irrigationCoverage: 75.5, // percentage
+    roadConnectivity: "Good"
+  },
+  {
+    state: "Uttar Pradesh",
+    district: "Lucknow",
+    gramPanchayat: "Malihabad",
+    population: 3200,
+    householdCount: 640,
+    agricultureLand: 450,
+    irrigationCoverage: 68.2,
+    roadConnectivity: "Average"
+  },
+  {
+    state: "Bihar",
+    district: "Patna",
+    gramPanchayat: "Bihta",
+    population: 4100,
+    householdCount: 820,
+    agricultureLand: 510,
+    irrigationCoverage: 45.8,
+    roadConnectivity: "Poor"
+  },
+  {
+    state: "Bihar",
+    district: "Gaya",
+    gramPanchayat: "Manpur",
+    population: 1800,
+    householdCount: 360,
+    agricultureLand: 280,
+    irrigationCoverage: 38.5,
+    roadConnectivity: "Poor"
+  },
+  {
+    state: "Rajasthan",
+    district: "Jaipur",
+    gramPanchayat: "Amber",
+    population: 2900,
+    householdCount: 580,
+    agricultureLand: 420,
+    irrigationCoverage: 52.3,
+    roadConnectivity: "Average"
+  },
+  {
+    state: "Rajasthan",
+    district: "Jodhpur",
+    gramPanchayat: "Phalodi",
+    population: 1500,
+    householdCount: 300,
+    agricultureLand: 180,
+    irrigationCoverage: 28.7,
+    roadConnectivity: "Poor"
+  },
+  {
+    state: "Maharashtra",
+    district: "Pune",
+    gramPanchayat: "Velhe",
+    population: 3600,
+    householdCount: 720,
+    agricultureLand: 480,
+    irrigationCoverage: 72.4,
+    roadConnectivity: "Good"
+  },
+  {
+    state: "Maharashtra",
+    district: "Nagpur",
+    gramPanchayat: "Ramtek",
+    population: 2700,
+    householdCount: 540,
+    agricultureLand: 350,
+    irrigationCoverage: 64.1,
+    roadConnectivity: "Good"
+  }
+];
+
+// NGO Directory data
+export const ngoData = [
+  {
+    name: "Rural Development Trust",
+    state: "Andhra Pradesh",
+    district: "Anantapur",
+    registrationNumber: "AP1234",
+    sector: "Education",
+    yearEstablished: 1996,
+    contactPerson: "Ramesh Kumar",
+    contactEmail: "info@ruraltrust.org"
+  },
+  {
+    name: "Women Empowerment Foundation",
+    state: "Karnataka",
+    district: "Bangalore",
+    registrationNumber: "KA5678",
+    sector: "Women's Rights",
+    yearEstablished: 2005,
+    contactPerson: "Priya Sharma",
+    contactEmail: "contact@wef.org"
+  },
+  {
+    name: "Clean Water Initiative",
+    state: "Tamil Nadu",
+    district: "Chennai",
+    registrationNumber: "TN9012",
+    sector: "Health",
+    yearEstablished: 2010,
+    contactPerson: "Samuel Johnson",
+    contactEmail: "info@cleanwater.org"
+  },
+  {
+    name: "Green Earth Society",
+    state: "Maharashtra",
+    district: "Mumbai",
+    registrationNumber: "MH3456",
+    sector: "Environment",
+    yearEstablished: 2008,
+    contactPerson: "Anita Desai",
+    contactEmail: "contact@greenearth.org"
+  },
+  {
+    name: "Child Welfare Association",
+    state: "Kerala",
+    district: "Ernakulam",
+    registrationNumber: "KL7890",
+    sector: "Child Rights",
+    yearEstablished: 2001,
+    contactPerson: "Thomas Kurian",
+    contactEmail: "info@childwelfare.org"
+  },
+  {
+    name: "Digital Literacy Mission",
+    state: "Gujarat",
+    district: "Ahmedabad",
+    registrationNumber: "GJ1234",
+    sector: "Education",
+    yearEstablished: 2015,
+    contactPerson: "Amit Patel",
+    contactEmail: "contact@dlm.org"
+  },
+  {
+    name: "Healthcare For All",
+    state: "West Bengal",
+    district: "Kolkata",
+    registrationNumber: "WB5678",
+    sector: "Health",
+    yearEstablished: 2007,
+    contactPerson: "Suchitra Sen",
+    contactEmail: "info@healthcareforall.org"
+  },
+  {
+    name: "Rural Innovation Hub",
+    state: "Delhi",
+    district: "New Delhi",
+    registrationNumber: "DL9012",
+    sector: "Rural Development",
+    yearEstablished: 2012,
+    contactPerson: "Vikram Singh",
+    contactEmail: "contact@ruralinnovation.org"
+  }
+];
+
 // Datasets metadata
 export const availableDatasets = [
   {
@@ -136,13 +304,13 @@ export const availableDatasets = [
     isNew: false
   },
   {
-    id: "health-indicators",
-    title: "Women Health Indicators",
-    description: "Health indicators for women across different states and districts including maternal health, nutrition status, and healthcare access.",
-    source: "Ministry of Health and Family Welfare",
+    id: "village-gram-panchayat",
+    title: "Village Gram Panchayat",
+    description: "Information on village-level governance, including population, household counts, agriculture land, irrigation coverage, and infrastructure status.",
+    source: "Ministry of Panchayati Raj",
     recordCount: 420,
     lastUpdated: "2023-11-10",
-    category: "Health",
+    category: "Governance",
     isNew: true
   },
   {
@@ -169,6 +337,60 @@ export const getSummaryStats = (data: any[]) => {
     avgLiteracy,
     avgGenderRatio,
     urbanPopulationPercentage
+  };
+};
+
+// For Village Gram Panchayat summary statistics calculation
+export const getGramPanchayatStats = (data: any[]) => {
+  const totalPopulation = data.reduce((sum, item) => sum + item.population, 0);
+  const totalHouseholds = data.reduce((sum, item) => sum + item.householdCount, 0);
+  const totalAgricultureLand = data.reduce((sum, item) => sum + item.agricultureLand, 0);
+  const avgIrrigationCoverage = data.reduce((sum, item) => sum + item.irrigationCoverage, 0) / data.length;
+  
+  const roadConnectivityCount = {
+    Good: data.filter(item => item.roadConnectivity === "Good").length,
+    Average: data.filter(item => item.roadConnectivity === "Average").length,
+    Poor: data.filter(item => item.roadConnectivity === "Poor").length
+  };
+  
+  return {
+    totalPopulation,
+    totalHouseholds,
+    totalAgricultureLand,
+    avgIrrigationCoverage,
+    roadConnectivityCount
+  };
+};
+
+// For NGO Directory summary statistics calculation
+export const getNgoStats = (data: any[]) => {
+  const totalNgos = data.length;
+  
+  const sectorCounts: Record<string, number> = {};
+  data.forEach(ngo => {
+    if (!sectorCounts[ngo.sector]) {
+      sectorCounts[ngo.sector] = 0;
+    }
+    sectorCounts[ngo.sector]++;
+  });
+  
+  const avgYearEstablished = Math.round(
+    data.reduce((sum, item) => sum + item.yearEstablished, 0) / data.length
+  );
+  
+  const stateDistribution = data.reduce((acc: Record<string, number>, ngo) => {
+    if (!acc[ngo.state]) {
+      acc[ngo.state] = 0;
+    }
+    acc[ngo.state]++;
+    return acc;
+  }, {});
+  
+  return {
+    totalNgos,
+    sectorCounts,
+    avgYearEstablished,
+    stateDistribution
   };
 };
 
@@ -204,4 +426,132 @@ export const prepareChartData = (data: any[], groupBy: string, valueField: strin
     name,
     value
   }));
+};
+
+// Get dataset by ID
+export const getDatasetById = (id: string) => {
+  switch(id) {
+    case 'census-2011':
+      return {
+        data: censusData,
+        filterOptions: [
+          {
+            id: "state",
+            label: "State",
+            options: getUniqueValues(censusData, "state").map(value => ({ value, label: value }))
+          },
+          {
+            id: "district",
+            label: "District",
+            options: getUniqueValues(censusData, "district").map(value => ({ value, label: value }))
+          }
+        ],
+        columns: [
+          { key: "state", label: "State" },
+          { key: "district", label: "District" },
+          { key: "population", label: "Population" },
+          { key: "literacyRate", label: "Literacy Rate (%)" },
+          { key: "genderRatio", label: "Gender Ratio" },
+          { key: "urbanPopulation", label: "Urban Population (%)" }
+        ],
+        metrics: [
+          { id: "population", label: "Population" },
+          { id: "literacyRate", label: "Literacy Rate" },
+          { id: "genderRatio", label: "Gender Ratio" }
+        ],
+        getStats: getSummaryStats
+      };
+    case 'village-gram-panchayat':
+      return {
+        data: gramPanchayatData,
+        filterOptions: [
+          {
+            id: "state",
+            label: "State",
+            options: getUniqueValues(gramPanchayatData, "state").map(value => ({ value, label: value }))
+          },
+          {
+            id: "district",
+            label: "District",
+            options: getUniqueValues(gramPanchayatData, "district").map(value => ({ value, label: value }))
+          },
+          {
+            id: "gramPanchayat",
+            label: "Gram Panchayat",
+            options: getUniqueValues(gramPanchayatData, "gramPanchayat").map(value => ({ value, label: value }))
+          },
+          {
+            id: "roadConnectivity",
+            label: "Road Connectivity",
+            options: getUniqueValues(gramPanchayatData, "roadConnectivity").map(value => ({ value, label: value }))
+          }
+        ],
+        columns: [
+          { key: "state", label: "State" },
+          { key: "district", label: "District" },
+          { key: "gramPanchayat", label: "Gram Panchayat" },
+          { key: "population", label: "Population" },
+          { key: "householdCount", label: "Number of Households" },
+          { key: "agricultureLand", label: "Agricultural Land (hectares)" },
+          { key: "irrigationCoverage", label: "Irrigation Coverage (%)" },
+          { key: "roadConnectivity", label: "Road Connectivity" }
+        ],
+        metrics: [
+          { id: "population", label: "Population" },
+          { id: "householdCount", label: "Households" },
+          { id: "agricultureLand", label: "Agriculture Land" },
+          { id: "irrigationCoverage", label: "Irrigation Coverage" }
+        ],
+        getStats: getGramPanchayatStats
+      };
+    case 'ngo-directory':
+      return {
+        data: ngoData,
+        filterOptions: [
+          {
+            id: "state",
+            label: "State",
+            options: getUniqueValues(ngoData, "state").map(value => ({ value, label: value }))
+          },
+          {
+            id: "district",
+            label: "District",
+            options: getUniqueValues(ngoData, "district").map(value => ({ value, label: value }))
+          },
+          {
+            id: "sector",
+            label: "Sector",
+            options: getUniqueValues(ngoData, "sector").map(value => ({ value, label: value }))
+          },
+          {
+            id: "yearEstablished",
+            label: "Established Before",
+            options: [
+              { value: "2000", label: "Before 2000" },
+              { value: "2005", label: "Before 2005" },
+              { value: "2010", label: "Before 2010" },
+              { value: "2015", label: "Before 2015" }
+            ]
+          }
+        ],
+        columns: [
+          { key: "name", label: "NGO Name" },
+          { key: "state", label: "State" },
+          { key: "district", label: "District" },
+          { key: "registrationNumber", label: "Registration No." },
+          { key: "sector", label: "Sector" },
+          { key: "yearEstablished", label: "Year Established" },
+          { key: "contactPerson", label: "Contact Person" },
+          { key: "contactEmail", label: "Contact Email" }
+        ],
+        metrics: [
+          { id: "sector", label: "Sector" },
+          { id: "state", label: "State" },
+          { id: "yearEstablished", label: "Establishment Year" }
+        ],
+        getStats: getNgoStats
+      };
+    default:
+      return null;
+  }
 };
