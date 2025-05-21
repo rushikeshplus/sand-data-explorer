@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -297,11 +296,11 @@ const DatasetDetail = () => {
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-teal"></div>
-                          <span>The highest literacy rate is {Math.max(...filteredData.map(d => d.literacyRate)).toFixed(2)}% in {filteredData.sort((a, b) => b.literacyRate - a.literacyRate)[0].district}.</span>
+                          <span>The highest literacy rate is {Math.max(...filteredData.map(d => Number(d.literacyRate) || 0)).toFixed(2)}% in {filteredData.sort((a, b) => (Number(b.literacyRate) || 0) - (Number(a.literacyRate) || 0))[0]?.district || 'N/A'}.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-purple"></div>
-                          <span>The average gender ratio across all districts is {(filteredData.reduce((sum, d) => sum + d.genderRatio, 0) / filteredData.length).toFixed(0)} females per 1000 males.</span>
+                          <span>The average gender ratio across all districts is {(filteredData.reduce((sum, d) => sum + (Number(d.genderRatio) || 0), 0) / (filteredData.length || 1)).toFixed(0)} females per 1000 males.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-orange"></div>
@@ -318,7 +317,7 @@ const DatasetDetail = () => {
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-teal"></div>
-                          <span>The average household size is {(filteredData.reduce((sum, d) => sum + (d.population || 0), 0) / filteredData.reduce((sum, d) => sum + (d.householdCount || 0), 0)).toFixed(2)} persons.</span>
+                          <span>The average household size is {(filteredData.reduce((sum, d) => sum + (Number(d.population) || 0), 0) / (filteredData.reduce((sum, d) => sum + (Number(d.householdCount) || 0), 0) || 1)).toFixed(2)} persons.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-purple"></div>
@@ -326,7 +325,7 @@ const DatasetDetail = () => {
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-orange"></div>
-                          <span>The average irrigated land is {(filteredData.reduce((sum, d) => sum + ((d.agricultureLand || 0) * (d.irrigationCoverage || 0) / 100), 0)).toFixed(2)} hectares.</span>
+                          <span>The average irrigated land is {(filteredData.reduce((sum, d) => sum + ((Number(d.agricultureLand) || 0) * (Number(d.irrigationCoverage) || 0) / 100), 0)).toFixed(2)} hectares.</span>
                         </li>
                       </>
                     )}
@@ -347,7 +346,7 @@ const DatasetDetail = () => {
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-orange"></div>
-                          <span>The oldest NGO was established in {Math.min(...filteredData.map(d => d.yearEstablished))}.</span>
+                          <span>The oldest NGO was established in {Math.min(...filteredData.map(d => Number(d.yearEstablished) || new Date().getFullYear()))}.</span>
                         </li>
                       </>
                     )}
