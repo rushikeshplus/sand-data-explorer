@@ -22,7 +22,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change }) => {
         {icon && <div className="text-sand-teal">{icon}</div>}
       </div>
       {change && (
-        <div className={`mt-2 text-xs ${change.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`mt-2 text-xs ${change.isPositive ? 'text-sand-green' : 'text-sand-teal'}`}>
           {change.isPositive ? '↑' : '↓'} {Math.abs(change.value)}% from previous
         </div>
       )}

@@ -8,10 +8,17 @@ const Footer = () => {
       <div className="container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-white font-bold text-lg mb-4">SAND Data</h3>
+            <div className="flex items-center space-x-2 mb-4">
+              <img 
+                src="https://sandnetwork.in/wp-content/uploads/2024/02/sand-logo.png" 
+                alt="SAND Network Logo" 
+                className="h-6"
+              />
+              <h3 className="text-white font-bold text-lg">SAND Data</h3>
+            </div>
             <p className="text-sm">
-              A centralized platform for structured, open datasets for research, 
-              analysis, and planning in various domains.
+              Internal portal for structured, open datasets for research, 
+              analysis, and planning across various domains.
             </p>
           </div>
           
@@ -30,7 +37,7 @@ const Footer = () => {
               </li>
               <li>
                 <NavLink to="/about" className="hover:text-white transition-colors">
-                  About Us
+                  About
                 </NavLink>
               </li>
             </ul>
@@ -39,11 +46,11 @@ const Footer = () => {
           <div>
             <h3 className="text-white font-bold text-lg mb-4">Contact</h3>
             <ul className="space-y-2 text-sm">
-              <li>Email: info@sanddata.org</li>
-              <li>Twitter: @SANDData</li>
+              <li>Email: internal@sandnetwork.in</li>
+              <li>Extension: #4521</li>
               <li>
                 <NavLink to="/contact" className="hover:text-white transition-colors">
-                  Contact Form
+                  Support Ticket
                 </NavLink>
               </li>
             </ul>
@@ -51,7 +58,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-white/10 mt-8 pt-6 text-sm text-center">
-          <p>© 2025 SAND Data. All rights reserved.</p>
+          <p>© 2025 SAND Network. For internal use only.</p>
         </div>
       </div>
     </footer>

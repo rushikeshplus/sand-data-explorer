@@ -10,8 +10,12 @@ const Header = () => {
       <div className="container mx-auto">
         <div className="flex justify-between items-center">
           <NavLink to="/" className="flex items-center space-x-2">
-            <div className="font-bold text-2xl">SAND Data</div>
-            <div className="text-xs bg-sand-orange px-2 py-0.5 rounded">Beta</div>
+            <img 
+              src="https://sandnetwork.in/wp-content/uploads/2024/02/sand-logo.png" 
+              alt="SAND Network Logo" 
+              className="h-8"
+            />
+            <div className="text-xs bg-sand-teal px-2 py-0.5 rounded-sm text-white">Internal</div>
           </NavLink>
 
           <div className="hidden md:flex items-center space-x-6">
