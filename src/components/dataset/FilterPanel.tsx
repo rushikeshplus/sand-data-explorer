@@ -3,7 +3,9 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Filter, BarChart2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface FilterOption {
   value: string;
@@ -19,23 +21,42 @@ interface FilterPanelProps {
   onFilterChange: (filterId: string, value: string) => void;
   onReset: () => void;
   className?: string;
+  numericFilters?: {
+    id: string;
+    label: string;
+    min: number;
+    max: number;
+  }[];
+  onNumericFilterChange?: (filterId: string, min: number, max: number) => void;
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
   filters,
   onFilterChange,
   onReset,
-  className = ""
+  className = "",
+  numericFilters = [],
+  onNumericFilterChange
 }) => {
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string>>({});
+  const [numericValues, setNumericValues] = useState<Record<string, [number, number]>>({});
 
   const handleFilterChange = (filterId: string, value: string) => {
     setSelectedFilters((prev) => ({ ...prev, [filterId]: value }));
     onFilterChange(filterId, value);
   };
 
+  const handleNumericFilterChange = (filterId: string, values: number[]) => {
+    const [min, max] = values;
+    setNumericValues((prev) => ({ ...prev, [filterId]: [min, max] }));
+    if (onNumericFilterChange) {
+      onNumericFilterChange(filterId, min, max);
+    }
+  };
+
   const handleReset = () => {
     setSelectedFilters({});
+    setNumericValues({});
     onReset();
   };
 
@@ -75,6 +96,46 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        ))}
+
+        {numericFilters.map((filter) => (
+          <div key={filter.id} className="grid gap-2">
+            <Label htmlFor={filter.id} className="text-gray-300">{filter.label}</Label>
+            <div className="pt-2 px-2">
+              <Slider
+                id={filter.id}
+                defaultValue={[filter.min, filter.max]}
+                min={filter.min}
+                max={filter.max}
+                step={1}
+                onValueChange={(values) => handleNumericFilterChange(filter.id, values)}
+                className="my-6"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Input 
+                type="number" 
+                className="w-20 bg-gray-700 border-gray-600 text-gray-200" 
+                value={(numericValues[filter.id]?.[0] ?? filter.min).toString()}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  const max = numericValues[filter.id]?.[1] ?? filter.max;
+                  handleNumericFilterChange(filter.id, [value, max]);
+                }}
+              />
+              <span className="text-gray-400">to</span>
+              <Input 
+                type="number" 
+                className="w-20 bg-gray-700 border-gray-600 text-gray-200" 
+                value={(numericValues[filter.id]?.[1] ?? filter.max).toString()}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  const min = numericValues[filter.id]?.[0] ?? filter.min;
+                  handleNumericFilterChange(filter.id, [min, value]);
+                }}
+              />
+            </div>
           </div>
         ))}
       </div>
