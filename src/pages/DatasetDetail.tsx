@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, PieChart, Filter, Download, Info } from "lucide-react";
+import { BarChart, PieChart, Filter, Download, Info, Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Bar,
   BarChart as RechartsBarChart,
@@ -34,20 +35,128 @@ const DatasetDetail = () => {
   const [chartGroupBy, setChartGroupBy] = useState<string>("state");
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [uploadedData, setUploadedData] = useState<any[]>([]);
+  const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   
   // Get dataset information based on ID
   const dataset = datasetId ? getDatasetById(datasetId) : null;
   
   useEffect(() => {
     if (dataset) {
-      setFilteredData(dataset.data);
+      const dataToUse = isUsingUploadedData && uploadedData.length > 0 ? uploadedData : dataset.data;
+      setFilteredData(dataToUse);
       
       // Set default chart metric based on available metrics
       if (dataset.metrics && dataset.metrics.length > 0) {
         setChartMetric(dataset.metrics[0].id);
       }
     }
-  }, [datasetId, dataset]);
+  }, [datasetId, dataset, uploadedData, isUsingUploadedData]);
+
+  // Parse CSV content
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split('\t'); // Using tab delimiter based on your column format
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        const values = lines[i].split('\t');
+        const row: any = {};
+        
+        headers.forEach((header, index) => {
+          const value = values[index]?.trim();
+          // Convert numeric columns to numbers
+          if (value && !isNaN(Number(value))) {
+            row[header.trim()] = Number(value);
+          } else {
+            row[header.trim()] = value || '';
+          }
+        });
+        
+        // Map census columns to our expected format for compatibility
+        if (row.State && row.District && row.Name) {
+          const mappedRow = {
+            state: row.Name || '', // Use Name for state name
+            district: row.Name || '', // Use Name for district name
+            population: row.TOT_P || 0,
+            literacyRate: row.P_LIT ? ((row.P_LIT / row.TOT_P) * 100) : 0,
+            genderRatio: row.TOT_F && row.TOT_M ? ((row.TOT_F / row.TOT_M) * 1000) : 0,
+            urbanPopulation: 0, // Would need TRU analysis for urban/rural
+            // Keep original census columns
+            ...row
+          };
+          data.push(mappedRow);
+        }
+      }
+    }
+    
+    return data;
+  };
+
+  // Handle CSV file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is CSV
+    if (!file.name.endsWith('.csv')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a CSV file.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csvText = e.target?.result as string;
+        const parsedData = parseCSV(csvText);
+        
+        if (parsedData.length === 0) {
+          toast({
+            title: "No Data Found",
+            description: "The CSV file appears to be empty or invalid.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setUploadedData(parsedData);
+        setIsUsingUploadedData(true);
+        setFilters({}); // Reset filters when new data is uploaded
+        
+        toast({
+          title: "CSV Uploaded Successfully",
+          description: `Loaded ${parsedData.length} records from your CSV file.`,
+        });
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        toast({
+          title: "Error Parsing CSV",
+          description: "There was an error reading your CSV file. Please check the format.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+
+  // Switch back to original data
+  const useOriginalData = () => {
+    setIsUsingUploadedData(false);
+    setFilters({});
+    if (dataset) {
+      setFilteredData(dataset.data);
+    }
+    toast({
+      title: "Switched to Original Data",
+      description: "Now showing the default census data.",
+    });
+  };
   
   if (!dataset || !datasetId) {
     return (
@@ -71,14 +180,16 @@ const DatasetDetail = () => {
     setFilters(newFilters);
     
     // Apply filters to data
-    const newFilteredData = filterData(dataset.data, newFilters);
+    const dataToFilter = isUsingUploadedData && uploadedData.length > 0 ? uploadedData : dataset.data;
+    const newFilteredData = filterData(dataToFilter, newFilters);
     setFilteredData(newFilteredData);
   };
   
   // Reset all filters
   const handleFilterReset = () => {
     setFilters({});
-    setFilteredData(dataset.data);
+    const dataToUse = isUsingUploadedData && uploadedData.length > 0 ? uploadedData : dataset.data;
+    setFilteredData(dataToUse);
   };
   
   // Handle download action
@@ -156,19 +267,40 @@ const DatasetDetail = () => {
   return (
     <Layout>
       <div className="sand-page-container">
-        <h1 className="sand-header">{getDatasetTitle(datasetId)}</h1>
-        
-        <div className="mb-6">
-          <Alert className="bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4" />
-            <AlertTitle>About this dataset</AlertTitle>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="sand-header">{getDatasetTitle(datasetId)}</h1>
+          
+          {/* CSV Upload Section */}
+          <div className="flex gap-4 items-center">
+            {isUsingUploadedData && (
+              <button
+                onClick={useOriginalData}
+                className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Use Original Data
+              </button>
+            )}
+            <div className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              <Input
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                className="w-64"
+              />
+            </div>
+          </div>
+        </div>
+
+        {isUsingUploadedData && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <Upload className="h-4 w-4" />
+            <AlertTitle>Using Uploaded Data</AlertTitle>
             <AlertDescription>
-              {datasetId === 'census-2011' && "The Census 2011 dataset contains comprehensive demographic information collected during the 15th Indian National Census. It includes population counts, literacy rates, gender ratios, and urban/rural distribution across different states and districts."}
-              {datasetId === 'village-gram-panchayat' && "The Village Gram Panchayat dataset contains information on village-level governance, including population statistics, household counts, agriculture land, irrigation coverage, and infrastructure status across various states and districts."}
-              {datasetId === 'ngo-directory' && "The NGO Darpan Database contains comprehensive information about registered non-governmental organizations across India, including their focus sectors, registration details, geographical presence, and contact information."}
+              Currently displaying data from your uploaded CSV file with {uploadedData.length} records.
             </AlertDescription>
           </Alert>
-        </div>
+        )}
         
         <Tabs
           defaultValue="overview"

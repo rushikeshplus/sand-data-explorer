@@ -1,4 +1,3 @@
-
 // Census 2011 mock data
 export const censusData = [
   {
@@ -457,9 +456,18 @@ export const getDatasetById = (id: string) => {
         metrics: [
           { id: "population", label: "Population" },
           { id: "literacyRate", label: "Literacy Rate" },
-          { id: "genderRatio", label: "Gender Ratio" }
+          { id: "genderRatio", label: "Gender Ratio" },
+          { id: "TOT_P", label: "Total Population" },
+          { id: "No_HH", label: "Number of Households" },
+          { id: "P_LIT", label: "Literate Population" }
         ],
-        getStats: getSummaryStats
+        getStats: (data: any[]) => {
+          // Check if this is uploaded census data with new columns
+          if (data.length > 0 && data[0].TOT_P !== undefined) {
+            return getCensusUploadStats(data);
+          }
+          return getSummaryStats(data);
+        }
       };
     case 'village-gram-panchayat':
       return {
@@ -554,4 +562,24 @@ export const getDatasetById = (id: string) => {
     default:
       return null;
   }
+};
+
+// For summary statistics calculation with uploaded census data
+export const getCensusUploadStats = (data: any[]) => {
+  const totalPopulation = data.reduce((sum, item) => sum + (Number(item.TOT_P) || Number(item.population) || 0), 0);
+  const totalHouseholds = data.reduce((sum, item) => sum + (Number(item.No_HH) || 0), 0);
+  const totalLiterate = data.reduce((sum, item) => sum + (Number(item.P_LIT) || 0), 0);
+  const totalMale = data.reduce((sum, item) => sum + (Number(item.TOT_M) || 0), 0);
+  const totalFemale = data.reduce((sum, item) => sum + (Number(item.TOT_F) || 0), 0);
+  
+  const avgLiteracy = totalPopulation > 0 ? (totalLiterate / totalPopulation) * 100 : 0;
+  const avgGenderRatio = totalMale > 0 ? (totalFemale / totalMale) * 1000 : 0;
+  
+  return {
+    totalPopulation,
+    totalHouseholds,
+    avgLiteracy,
+    avgGenderRatio,
+    urbanPopulationPercentage: 0 // Would need TRU analysis
+  };
 };
