@@ -25,6 +25,7 @@ import {
   PieChart as RechartsPieChart
 } from "recharts";
 import { filterData, getDatasetById } from "@/utils/mockData";
+import { supabase } from "@/integrations/supabase/client";
 
 const DatasetDetail = () => {
   const { datasetId } = useParams<{ datasetId: string }>();
@@ -35,20 +36,59 @@ const DatasetDetail = () => {
   const [chartGroupBy, setChartGroupBy] = useState<string>("State");
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [supabaseData, setSupabaseData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   
   // Get dataset information based on ID
   const dataset = datasetId ? getDatasetById(datasetId) : null;
   
+  // Fetch data from Supabase for census-2011
+  useEffect(() => {
+    const fetchSupabaseData = async () => {
+      if (datasetId === 'census-2011') {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('Cencus_2011')
+            .select('*');
+          
+          if (error) {
+            console.error('Error fetching Supabase data:', error);
+            toast({
+              title: "Error",
+              description: "Failed to fetch data from database",
+              variant: "destructive"
+            });
+          } else {
+            console.log('Fetched Supabase data:', data);
+            setSupabaseData(data || []);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchSupabaseData();
+  }, [datasetId, toast]);
+  
   useEffect(() => {
     if (dataset) {
-      setFilteredData(dataset.data);
+      // Use Supabase data for census-2011, otherwise use mock data
+      const dataToUse = datasetId === 'census-2011' && supabaseData.length > 0 
+        ? supabaseData 
+        : dataset.data;
+      
+      setFilteredData(dataToUse);
       
       // Set default chart metric based on available metrics
       if (dataset.metrics && dataset.metrics.length > 0) {
         setChartMetric(dataset.metrics[0].id);
       }
     }
-  }, [datasetId, dataset]);
+  }, [datasetId, dataset, supabaseData]);
   
   if (!dataset || !datasetId) {
     return (
@@ -71,15 +111,23 @@ const DatasetDetail = () => {
     const newFilters = { ...filters, [filterId]: value };
     setFilters(newFilters);
     
+    // Use appropriate data source
+    const sourceData = datasetId === 'census-2011' && supabaseData.length > 0 
+      ? supabaseData 
+      : dataset.data;
+    
     // Apply filters to data
-    const newFilteredData = filterData(dataset.data, newFilters);
+    const newFilteredData = filterData(sourceData, newFilters);
     setFilteredData(newFilteredData);
   };
   
   // Reset all filters
   const handleFilterReset = () => {
     setFilters({});
-    setFilteredData(dataset.data);
+    const sourceData = datasetId === 'census-2011' && supabaseData.length > 0 
+      ? supabaseData 
+      : dataset.data;
+    setFilteredData(sourceData);
   };
   
   // Handle download action
@@ -130,8 +178,9 @@ const DatasetDetail = () => {
       }
       
       // For numeric values, sum them
-      if (typeof item[chartMetric] === 'number') {
-        groupedData[key] += item[chartMetric];
+      const metricValue = Number(item[chartMetric]) || 0;
+      if (typeof metricValue === 'number') {
+        groupedData[key] += metricValue;
       } 
       // For categorical values, count occurrences
       else {
@@ -154,11 +203,30 @@ const DatasetDetail = () => {
     .filter(col => col.key !== chartMetric) // Can't group by the same column as the metric
     .map(col => ({ key: col.key, label: col.label }));
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="sand-page-container">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-lg">Loading census data...</div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="sand-page-container">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="sand-header">{getDatasetTitle(datasetId)}</h1>
+          <h1 className="sand-header">
+            {getDatasetTitle(datasetId)}
+            {datasetId === 'census-2011' && supabaseData.length > 0 && (
+              <span className="text-sm text-green-600 ml-2">
+                (Connected to Supabase - {supabaseData.length} records)
+              </span>
+            )}
+          </h1>
         </div>
         
         <Tabs

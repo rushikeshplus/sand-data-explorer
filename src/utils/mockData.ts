@@ -729,27 +729,27 @@ export const prepareChartData = (data: any[], groupBy: string, valueField: strin
   }));
 };
 
-// Get dataset by ID
+// Get dataset by ID - updated to use Supabase data for census-2011
 export const getDatasetById = (id: string) => {
   switch(id) {
     case 'census-2011':
       return {
-        data: detailedCensusData, // Use detailed census data instead of simplified
+        data: detailedCensusData, // This will be overridden by Supabase data
         filterOptions: [
           {
             id: "State",
             label: "State",
-            options: getUniqueValues(detailedCensusData, "State").map(value => ({ value, label: value }))
+            options: [] // Will be populated dynamically from Supabase data
           },
           {
             id: "District",
-            label: "District",
-            options: getUniqueValues(detailedCensusData, "District").map(value => ({ value, label: value }))
+            label: "District", 
+            options: []
           },
           {
             id: "TRU",
             label: "Area Type",
-            options: getUniqueValues(detailedCensusData, "TRU").map(value => ({ value, label: value }))
+            options: []
           }
         ],
         columns: [
@@ -772,7 +772,7 @@ export const getDatasetById = (id: string) => {
           { id: "TOT_M", label: "Total Males" },
           { id: "TOT_F", label: "Total Females" }
         ],
-        getStats: getSummaryStats
+        getStats: getSupabaseCensusStats
       };
     case 'village-gram-panchayat':
       return {
@@ -886,5 +886,32 @@ export const getCensusUploadStats = (data: any[]) => {
     avgLiteracy,
     avgGenderRatio,
     urbanPopulationPercentage: 0 // Would need TRU analysis
+  };
+};
+
+// For summary statistics calculation with Supabase census data
+export const getSupabaseCensusStats = (data: any[]) => {
+  if (!data || data.length === 0) return {};
+  
+  const totalPopulation = data.reduce((sum, item) => sum + (Number(item.TOT_P) || 0), 0);
+  const totalHouseholds = data.reduce((sum, item) => sum + (Number(item.No_HH) || 0), 0);
+  const totalLiterate = data.reduce((sum, item) => sum + (Number(item.P_LIT) || 0), 0);
+  const totalMale = data.reduce((sum, item) => sum + (Number(item.TOT_M) || 0), 0);
+  const totalFemale = data.reduce((sum, item) => sum + (Number(item.TOT_F) || 0), 0);
+  
+  const avgLiteracy = totalPopulation > 0 ? (totalLiterate / totalPopulation) * 100 : 0;
+  const avgGenderRatio = totalMale > 0 ? (totalFemale / totalMale) * 1000 : 0;
+  
+  // Calculate urban population percentage
+  const urbanAreas = data.filter(d => d.TRU === "Urban" || d.TRU === "urban");
+  const urbanPopulation = urbanAreas.reduce((sum, item) => sum + (Number(item.TOT_P) || 0), 0);
+  const urbanPopulationPercentage = totalPopulation > 0 ? (urbanPopulation / totalPopulation) * 100 : 0;
+  
+  return {
+    totalPopulation,
+    totalHouseholds,
+    avgLiteracy,
+    avgGenderRatio,
+    urbanPopulationPercentage
   };
 };
