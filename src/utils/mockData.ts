@@ -749,7 +749,10 @@ export const getDatasetById = (id: string) => {
           {
             id: "TRU",
             label: "Area Type",
-            options: []
+            options: [
+              { value: "Urban", label: "Urban" },
+              { value: "Rural", label: "Rural" }
+            ]
           }
         ],
         columns: [
@@ -859,7 +862,7 @@ export const getDatasetById = (id: string) => {
         ],
         metrics: [
           { id: "sector", label: "Sector" },
-          { id: "state", label: "State" },
+          { key: "state", label: "State" },
           { id: "yearEstablished", label: "Establishment Year" }
         ],
         getStats: getNgoStats

@@ -151,15 +151,17 @@ const DatasetDetail = () => {
     const datasetInfo = getDatasetById(id);
     if (!datasetInfo) return "Dataset";
     
-    const datasetMeta = getDatasetById(id);
-    return datasetMeta?.columns[0]?.label || "Dataset";
+    if (id === 'census-2011') return "Census 2011 Data";
+    if (id === 'village-gram-panchayat') return "Village Gram Panchayat";
+    if (id === 'ngo-directory') return "NGO Directory";
+    return "Dataset";
   };
   
   // Prepare data for charts
   const chartData = prepareChartData(filteredData, chartGroupBy);
   
-  // Calculate summary statistics if available
-  const stats = dataset.getStats ? dataset.getStats(filteredData) : {};
+  // Calculate summary statistics
+  const stats = calculateStats(filteredData, datasetId);
   
   // Chart colors
   const CHART_COLORS = [
@@ -193,10 +195,66 @@ const DatasetDetail = () => {
       value
     }));
   }
-  
-  // Find dataset metadata
-  const datasetMeta = getDatasetById(datasetId);
-  const datasetTitle = datasetMeta?.columns[0]?.label || "Dataset";
+
+  // Helper function to calculate statistics
+  function calculateStats(data: any[], datasetId: string) {
+    if (datasetId === 'census-2011') {
+      const totalPopulation = data.reduce((sum, item) => sum + (Number(item.TOT_P) || 0), 0);
+      const totalLiterate = data.reduce((sum, item) => sum + (Number(item.P_LIT) || 0), 0);
+      const totalMales = data.reduce((sum, item) => sum + (Number(item.TOT_M) || 0), 0);
+      const totalFemales = data.reduce((sum, item) => sum + (Number(item.TOT_F) || 0), 0);
+      
+      const avgLiteracy = totalPopulation > 0 ? (totalLiterate / totalPopulation) * 100 : 0;
+      const avgGenderRatio = totalMales > 0 ? (totalFemales / totalMales) * 1000 : 0;
+      
+      const urbanAreas = data.filter(d => d.TRU === "Urban");
+      const urbanPopulation = urbanAreas.reduce((sum, item) => sum + (Number(item.TOT_P) || 0), 0);
+      const urbanPopulationPercentage = totalPopulation > 0 ? (urbanPopulation / totalPopulation) * 100 : 0;
+      
+      return {
+        totalPopulation,
+        avgLiteracy,
+        avgGenderRatio,
+        urbanPopulationPercentage
+      };
+    }
+    
+    if (datasetId === 'village-gram-panchayat') {
+      const totalPopulation = data.reduce((sum, item) => sum + (Number(item.population) || 0), 0);
+      const totalHouseholds = data.reduce((sum, item) => sum + (Number(item.householdCount) || 0), 0);
+      const totalAgricultureLand = data.reduce((sum, item) => sum + (Number(item.agricultureLand) || 0), 0);
+      const avgIrrigationCoverage = data.length > 0 ? data.reduce((sum, item) => sum + (Number(item.irrigationCoverage) || 0), 0) / data.length : 0;
+      
+      return {
+        totalPopulation,
+        totalHouseholds,
+        totalAgricultureLand,
+        avgIrrigationCoverage
+      };
+    }
+    
+    if (datasetId === 'ngo-directory') {
+      const totalNgos = data.length;
+      const sectorCounts: Record<string, number> = {};
+      
+      data.forEach(ngo => {
+        const sector = ngo.sector || 'Unknown';
+        sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
+      });
+      
+      const avgYearEstablished = data.length > 0 ? Math.round(
+        data.reduce((sum, item) => sum + (Number(item.yearEstablished) || 0), 0) / data.length
+      ) : 0;
+      
+      return {
+        totalNgos,
+        sectorCounts,
+        avgYearEstablished
+      };
+    }
+    
+    return {};
+  }
   
   // Get available grouping options based on dataset columns
   const groupByOptions = dataset.columns
@@ -247,19 +305,19 @@ const DatasetDetail = () => {
                 <>
                   <StatCard 
                     title="Total Population" 
-                    value={(stats as any).totalPopulation?.toLocaleString() || '0'} 
+                    value={stats.totalPopulation?.toLocaleString() || '0'} 
                   />
                   <StatCard 
                     title="Average Literacy Rate" 
-                    value={`${(stats as any).avgLiteracy?.toFixed(2) || '0'}%`} 
+                    value={`${stats.avgLiteracy?.toFixed(2) || '0'}%`} 
                   />
                   <StatCard 
                     title="Average Gender Ratio" 
-                    value={(stats as any).avgGenderRatio?.toFixed(0) || '0'} 
+                    value={stats.avgGenderRatio?.toFixed(0) || '0'} 
                   />
                   <StatCard 
                     title="Urban Population" 
-                    value={`${(stats as any).urbanPopulationPercentage?.toFixed(2) || '0'}%`} 
+                    value={`${stats.urbanPopulationPercentage?.toFixed(2) || '0'}%`} 
                   />
                 </>
               )}
@@ -268,19 +326,19 @@ const DatasetDetail = () => {
                 <>
                   <StatCard 
                     title="Total Population" 
-                    value={(stats as any).totalPopulation?.toLocaleString() || '0'} 
+                    value={stats.totalPopulation?.toLocaleString() || '0'} 
                   />
                   <StatCard 
                     title="Total Households" 
-                    value={(stats as any).totalHouseholds?.toLocaleString() || '0'} 
+                    value={stats.totalHouseholds?.toLocaleString() || '0'} 
                   />
                   <StatCard 
                     title="Agriculture Land" 
-                    value={`${(stats as any).totalAgricultureLand?.toLocaleString() || '0'} hectares`} 
+                    value={`${stats.totalAgricultureLand?.toLocaleString() || '0'} hectares`} 
                   />
                   <StatCard 
                     title="Avg. Irrigation Coverage" 
-                    value={`${(stats as any).avgIrrigationCoverage?.toFixed(2) || '0'}%`} 
+                    value={`${stats.avgIrrigationCoverage?.toFixed(2) || '0'}%`} 
                   />
                 </>
               )}
@@ -289,19 +347,19 @@ const DatasetDetail = () => {
                 <>
                   <StatCard 
                     title="Total NGOs" 
-                    value={(stats as any).totalNgos?.toLocaleString() || '0'} 
+                    value={stats.totalNgos?.toLocaleString() || '0'} 
                   />
                   <StatCard 
                     title="Education Sector NGOs" 
-                    value={(stats as any).sectorCounts?.Education?.toLocaleString() || '0'} 
+                    value={stats.sectorCounts?.Education?.toLocaleString() || '0'} 
                   />
                   <StatCard 
                     title="Health Sector NGOs" 
-                    value={(stats as any).sectorCounts?.Health?.toLocaleString() || '0'} 
+                    value={stats.sectorCounts?.Health?.toLocaleString() || '0'} 
                   />
                   <StatCard 
                     title="Avg. Establishment Year" 
-                    value={(stats as any).avgYearEstablished?.toString() || '0'} 
+                    value={stats.avgYearEstablished?.toString() || '0'} 
                   />
                 </>
               )}
@@ -355,23 +413,15 @@ const DatasetDetail = () => {
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-teal"></div>
-                          <span>The highest literacy rate is in {filteredData.sort((a, b) => {
-                            const aRate = (Number(a.P_LIT) || 0) / (Number(a.TOT_P) || 1) * 100;
-                            const bRate = (Number(b.P_LIT) || 0) / (Number(b.TOT_P) || 1) * 100;
-                            return bRate - aRate;
-                          })[0]?.Name || 'N/A'}.</span>
+                          <span>Total population: {stats.totalPopulation?.toLocaleString()}</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-purple"></div>
-                          <span>The average gender ratio across all areas is {(() => {
-                            const totalMales = filteredData.reduce((sum, d) => sum + (Number(d.TOT_M) || 0), 0);
-                            const totalFemales = filteredData.reduce((sum, d) => sum + (Number(d.TOT_F) || 0), 0);
-                            return totalMales > 0 ? ((totalFemales / totalMales) * 1000).toFixed(0) : '0';
-                          })()} females per 1000 males.</span>
+                          <span>Average literacy rate: {stats.avgLiteracy?.toFixed(2)}%</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-orange"></div>
-                          <span>Urban areas include {filteredData.filter(d => d.TRU === "Urban").length} locations.</span>
+                          <span>Urban population: {stats.urbanPopulationPercentage?.toFixed(2)}%</span>
                         </li>
                       </>
                     )}
@@ -380,30 +430,19 @@ const DatasetDetail = () => {
                       <>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-blue"></div>
-                          <span>The data covers {filteredData.length} gram panchayats across {new Set(filteredData.map(d => d.state)).size} states.</span>
+                          <span>The data covers {filteredData.length} gram panchayats.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-teal"></div>
-                          <span>The average household size is {(() => {
-                            const totalPopulation = filteredData.reduce((sum, d) => sum + (Number(d.population) || 0), 0);
-                            const totalHouseholds = filteredData.reduce((sum, d) => sum + (Number(d.householdCount) || 0), 0);
-                            return totalHouseholds > 0 ? (totalPopulation / totalHouseholds).toFixed(2) : "0";
-                          })()} persons.</span>
+                          <span>Total population: {stats.totalPopulation?.toLocaleString()}</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-purple"></div>
-                          <span>Road connectivity is rated as "Good" in {filteredData.filter(d => d.roadConnectivity === "Good").length} gram panchayats.</span>
+                          <span>Total households: {stats.totalHouseholds?.toLocaleString()}</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-orange"></div>
-                          <span>The average irrigated land is {(() => {
-                            const totalIrrigatedLand = filteredData.reduce((sum, d) => {
-                              const agricultureLand = Number(d.agricultureLand) || 0;
-                              const irrigationCoverage = Number(d.irrigationCoverage) || 0;
-                              return sum + (agricultureLand * irrigationCoverage / 100);
-                            }, 0);
-                            return totalIrrigatedLand.toFixed(2);
-                          })()} hectares.</span>
+                          <span>Agriculture land: {stats.totalAgricultureLand?.toLocaleString()} hectares</span>
                         </li>
                       </>
                     )}
@@ -412,19 +451,19 @@ const DatasetDetail = () => {
                       <>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-blue"></div>
-                          <span>The data covers {filteredData.length} NGOs across {new Set(filteredData.map(d => d.state)).size} states.</span>
+                          <span>The data covers {filteredData.length} NGOs.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-teal"></div>
-                          <span>The most common sector is {Object.entries((stats as any).sectorCounts || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'}.</span>
+                          <span>Total NGOs: {stats.totalNgos?.toLocaleString()}</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-purple"></div>
-                          <span>The state with the most NGOs is {Object.entries((stats as any).stateDistribution || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'}.</span>
+                          <span>Average establishment year: {stats.avgYearEstablished}</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-orange"></div>
-                          <span>The oldest NGO was established in {Math.min(...filteredData.map(d => Number(d.yearEstablished) || new Date().getFullYear()))}.</span>
+                          <span>Most common sector: {Object.entries(stats.sectorCounts || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'}</span>
                         </li>
                       </>
                     )}
