@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -9,8 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, PieChart, Filter, Download, Info, Upload } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { BarChart, PieChart, Filter, Download, Info } from "lucide-react";
 import {
   Bar,
   BarChart as RechartsBarChart,
@@ -31,132 +31,24 @@ const DatasetDetail = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [chartType, setChartType] = useState<"bar" | "pie">("bar");
-  const [chartMetric, setChartMetric] = useState<string>("population");
-  const [chartGroupBy, setChartGroupBy] = useState<string>("state");
+  const [chartMetric, setChartMetric] = useState<string>("TOT_P");
+  const [chartGroupBy, setChartGroupBy] = useState<string>("State");
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [uploadedData, setUploadedData] = useState<any[]>([]);
-  const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   
   // Get dataset information based on ID
   const dataset = datasetId ? getDatasetById(datasetId) : null;
   
   useEffect(() => {
     if (dataset) {
-      const dataToUse = isUsingUploadedData && uploadedData.length > 0 ? uploadedData : dataset.data;
-      setFilteredData(dataToUse);
+      setFilteredData(dataset.data);
       
       // Set default chart metric based on available metrics
       if (dataset.metrics && dataset.metrics.length > 0) {
         setChartMetric(dataset.metrics[0].id);
       }
     }
-  }, [datasetId, dataset, uploadedData, isUsingUploadedData]);
-
-  // Parse CSV content
-  const parseCSV = (csvText: string) => {
-    const lines = csvText.split('\n');
-    const headers = lines[0].split('\t'); // Using tab delimiter based on your column format
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      if (lines[i].trim()) {
-        const values = lines[i].split('\t');
-        const row: any = {};
-        
-        headers.forEach((header, index) => {
-          const value = values[index]?.trim();
-          // Convert numeric columns to numbers
-          if (value && !isNaN(Number(value))) {
-            row[header.trim()] = Number(value);
-          } else {
-            row[header.trim()] = value || '';
-          }
-        });
-        
-        // Map census columns to our expected format for compatibility
-        if (row.State && row.District && row.Name) {
-          const mappedRow = {
-            state: row.Name || '', // Use Name for state name
-            district: row.Name || '', // Use Name for district name
-            population: row.TOT_P || 0,
-            literacyRate: row.P_LIT ? ((row.P_LIT / row.TOT_P) * 100) : 0,
-            genderRatio: row.TOT_F && row.TOT_M ? ((row.TOT_F / row.TOT_M) * 1000) : 0,
-            urbanPopulation: 0, // Would need TRU analysis for urban/rural
-            // Keep original census columns
-            ...row
-          };
-          data.push(mappedRow);
-        }
-      }
-    }
-    
-    return data;
-  };
-
-  // Handle CSV file upload
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Check if file is CSV
-    if (!file.name.endsWith('.csv')) {
-      toast({
-        title: "Invalid File Type",
-        description: "Please upload a CSV file.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const csvText = e.target?.result as string;
-        const parsedData = parseCSV(csvText);
-        
-        if (parsedData.length === 0) {
-          toast({
-            title: "No Data Found",
-            description: "The CSV file appears to be empty or invalid.",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        setUploadedData(parsedData);
-        setIsUsingUploadedData(true);
-        setFilters({}); // Reset filters when new data is uploaded
-        
-        toast({
-          title: "CSV Uploaded Successfully",
-          description: `Loaded ${parsedData.length} records from your CSV file.`,
-        });
-      } catch (error) {
-        console.error('Error parsing CSV:', error);
-        toast({
-          title: "Error Parsing CSV",
-          description: "There was an error reading your CSV file. Please check the format.",
-          variant: "destructive"
-        });
-      }
-    };
-    
-    reader.readAsText(file);
-  };
-
-  // Switch back to original data
-  const useOriginalData = () => {
-    setIsUsingUploadedData(false);
-    setFilters({});
-    if (dataset) {
-      setFilteredData(dataset.data);
-    }
-    toast({
-      title: "Switched to Original Data",
-      description: "Now showing the default census data.",
-    });
-  };
+  }, [datasetId, dataset]);
   
   if (!dataset || !datasetId) {
     return (
@@ -180,16 +72,14 @@ const DatasetDetail = () => {
     setFilters(newFilters);
     
     // Apply filters to data
-    const dataToFilter = isUsingUploadedData && uploadedData.length > 0 ? uploadedData : dataset.data;
-    const newFilteredData = filterData(dataToFilter, newFilters);
+    const newFilteredData = filterData(dataset.data, newFilters);
     setFilteredData(newFilteredData);
   };
   
   // Reset all filters
   const handleFilterReset = () => {
     setFilters({});
-    const dataToUse = isUsingUploadedData && uploadedData.length > 0 ? uploadedData : dataset.data;
-    setFilteredData(dataToUse);
+    setFilteredData(dataset.data);
   };
   
   // Handle download action
@@ -269,38 +159,7 @@ const DatasetDetail = () => {
       <div className="sand-page-container">
         <div className="flex justify-between items-center mb-6">
           <h1 className="sand-header">{getDatasetTitle(datasetId)}</h1>
-          
-          {/* CSV Upload Section */}
-          <div className="flex gap-4 items-center">
-            {isUsingUploadedData && (
-              <button
-                onClick={useOriginalData}
-                className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-              >
-                Use Original Data
-              </button>
-            )}
-            <div className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              <Input
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="w-64"
-              />
-            </div>
-          </div>
         </div>
-
-        {isUsingUploadedData && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <Upload className="h-4 w-4" />
-            <AlertTitle>Using Uploaded Data</AlertTitle>
-            <AlertDescription>
-              Currently displaying data from your uploaded CSV file with {uploadedData.length} records.
-            </AlertDescription>
-          </Alert>
-        )}
         
         <Tabs
           defaultValue="overview"
@@ -424,19 +283,27 @@ const DatasetDetail = () => {
                       <>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-blue"></div>
-                          <span>The data covers {filteredData.length} districts across {new Set(filteredData.map(d => d.state)).size} states.</span>
+                          <span>The data covers {filteredData.length} areas across {new Set(filteredData.map(d => d.State)).size} states.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-teal"></div>
-                          <span>The highest literacy rate is {Math.max(...filteredData.map(d => Number(d.literacyRate) || 0)).toFixed(2)}% in {filteredData.sort((a, b) => (Number(b.literacyRate) || 0) - (Number(a.literacyRate) || 0))[0]?.district || 'N/A'}.</span>
+                          <span>The highest literacy rate is in {filteredData.sort((a, b) => {
+                            const aRate = (Number(a.P_LIT) || 0) / (Number(a.TOT_P) || 1) * 100;
+                            const bRate = (Number(b.P_LIT) || 0) / (Number(b.TOT_P) || 1) * 100;
+                            return bRate - aRate;
+                          })[0]?.Name || 'N/A'}.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-purple"></div>
-                          <span>The average gender ratio across all districts is {(filteredData.reduce((sum, d) => sum + (Number(d.genderRatio) || 0), 0) / (filteredData.length || 1)).toFixed(0)} females per 1000 males.</span>
+                          <span>The average gender ratio across all areas is {(() => {
+                            const totalMales = filteredData.reduce((sum, d) => sum + (Number(d.TOT_M) || 0), 0);
+                            const totalFemales = filteredData.reduce((sum, d) => sum + (Number(d.TOT_F) || 0), 0);
+                            return totalMales > 0 ? ((totalFemales / totalMales) * 1000).toFixed(0) : '0';
+                          })()} females per 1000 males.</span>
                         </li>
                         <li className="flex gap-2">
                           <div className="mt-0.5 h-2 w-2 rounded-full bg-sand-orange"></div>
-                          <span>The districts with 100% urbanization include Mumbai and Chennai.</span>
+                          <span>Urban areas include {filteredData.filter(d => d.TRU === "Urban").length} locations.</span>
                         </li>
                       </>
                     )}
@@ -540,15 +407,12 @@ const DatasetDetail = () => {
                       <CardContent className="p-4">
                         <div className="font-medium">{metric.label}</div>
                         <div className="text-sm text-gray-500">
-                          {metric.id === 'population' && 'Total number of people'}
-                          {metric.id === 'literacyRate' && 'Percentage of literate people'}
-                          {metric.id === 'genderRatio' && 'Females per 1000 males'}
-                          {metric.id === 'householdCount' && 'Number of households'}
-                          {metric.id === 'agricultureLand' && 'Agricultural area in hectares'}
-                          {metric.id === 'irrigationCoverage' && 'Percentage of irrigated land'}
-                          {metric.id === 'sector' && 'Focus area of the organization'}
-                          {metric.id === 'state' && 'State of operation'}
-                          {metric.id === 'yearEstablished' && 'Year of establishment'}
+                          {metric.id === 'TOT_P' && 'Total population count'}
+                          {metric.id === 'P_LIT' && 'Number of literate people'}
+                          {metric.id === 'No_HH' && 'Number of households'}
+                          {metric.id === 'TOT_WORK_P' && 'Total working population'}
+                          {metric.id === 'TOT_M' && 'Total male population'}
+                          {metric.id === 'TOT_F' && 'Total female population'}
                         </div>
                       </CardContent>
                     </Card>
@@ -572,7 +436,7 @@ const DatasetDetail = () => {
                     onClick={() => {
                       const currentIndex = groupByOptions.findIndex(opt => opt.key === chartGroupBy);
                       const nextIndex = (currentIndex + 1) % groupByOptions.length;
-                      setChartGroupBy(groupByOptions[nextIndex]?.key || 'state');
+                      setChartGroupBy(groupByOptions[nextIndex]?.key || 'State');
                     }}
                     className="p-2 border rounded flex items-center gap-1"
                   >
@@ -596,8 +460,8 @@ const DatasetDetail = () => {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="name" 
-                          angle={chartGroupBy === "district" || chartGroupBy === "gramPanchayat" ? -45 : 0} 
-                          textAnchor={chartGroupBy === "district" || chartGroupBy === "gramPanchayat" ? "end" : "middle"}
+                          angle={chartGroupBy === "District" || chartGroupBy === "Name" ? -45 : 0} 
+                          textAnchor={chartGroupBy === "District" || chartGroupBy === "Name" ? "end" : "middle"}
                           height={60}
                         />
                         <YAxis />
