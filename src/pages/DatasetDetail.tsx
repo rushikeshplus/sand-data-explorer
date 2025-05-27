@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import DataTable from "@/components/dataset/DataTable";
 import FilterPanel from "@/components/dataset/FilterPanel";
+import CensusAdvancedFilters from "@/components/dataset/CensusAdvancedFilters";
 import StatCard from "@/components/dataset/StatCard";
 import ChartContainer from "@/components/dataset/ChartContainer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -106,7 +107,7 @@ const DatasetDetail = () => {
     );
   }
   
-  // Handle filter changes
+  // Handle filter changes for non-census datasets
   const handleFilterChange = (filterId: string, value: string) => {
     const newFilters = { ...filters, [filterId]: value };
     setFilters(newFilters);
@@ -118,6 +119,11 @@ const DatasetDetail = () => {
     
     // Apply filters to data
     const newFilteredData = filterData(sourceData, newFilters);
+    setFilteredData(newFilteredData);
+  };
+  
+  // Handle advanced filter changes for census data
+  const handleCensusFilterChange = (newFilteredData: any[]) => {
     setFilteredData(newFilteredData);
   };
   
@@ -174,7 +180,7 @@ const DatasetDetail = () => {
     const groupedData: Record<string, number> = {};
     
     data.forEach(item => {
-      const key = item[groupBy];
+      const key = item[groupBy] || 'Unknown';
       if (!groupedData[key]) {
         groupedData[key] = 0;
       }
@@ -261,6 +267,10 @@ const DatasetDetail = () => {
     .filter(col => col.key !== chartMetric) // Can't group by the same column as the metric
     .map(col => ({ key: col.key, label: col.label }));
 
+  const sourceData = datasetId === 'census-2011' && supabaseData.length > 0 
+    ? supabaseData 
+    : dataset.data;
+
   if (loading) {
     return (
       <Layout>
@@ -286,6 +296,17 @@ const DatasetDetail = () => {
             )}
           </h1>
         </div>
+        
+        {/* Show advanced filters for Census 2011 data */}
+        {datasetId === 'census-2011' && sourceData.length > 0 && (
+          <div className="mb-6">
+            <CensusAdvancedFilters
+              data={sourceData}
+              onFilterChange={handleCensusFilterChange}
+              onDownload={handleDownload}
+            />
+          </div>
+        )}
         
         <Tabs
           defaultValue="overview"
@@ -475,15 +496,17 @@ const DatasetDetail = () => {
           
           <TabsContent value="data">
             <div className="flex flex-col lg:flex-row gap-6">
-              <div className="lg:w-1/4">
-                <FilterPanel 
-                  filters={dataset.filterOptions}
-                  onFilterChange={handleFilterChange}
-                  onReset={handleFilterReset}
-                />
-              </div>
+              {datasetId !== 'census-2011' && (
+                <div className="lg:w-1/4">
+                  <FilterPanel 
+                    filters={dataset.filterOptions}
+                    onFilterChange={handleFilterChange}
+                    onReset={handleFilterReset}
+                  />
+                </div>
+              )}
               
-              <div className="lg:w-3/4">
+              <div className={datasetId === 'census-2011' ? "w-full" : "lg:w-3/4"}>
                 <DataTable 
                   data={filteredData}
                   columns={dataset.columns}
