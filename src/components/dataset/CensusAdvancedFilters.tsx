@@ -124,7 +124,7 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
   // Initialize population range
   useEffect(() => {
     if (populationBounds[0] !== populationBounds[1]) {
-      setPopulationRange(populationBounds);
+      setPopulationRange([populationBounds[0], populationBounds[1]]);
     }
   }, [populationBounds]);
 
@@ -185,7 +185,7 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
     setSelectedSubdistrict("");
     setSelectedLevel("");
     setSelectedTRU("");
-    setPopulationRange(populationBounds);
+    setPopulationRange([populationBounds[0], populationBounds[1]]);
   };
 
   // Calculate summary statistics
@@ -262,14 +262,14 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
             {/* State Filter */}
             <div className="space-y-2">
               <Label>State</Label>
-              <Select value={selectedState} onValueChange={setSelectedState}>
+              <Select value={selectedState || "__all__"} onValueChange={(val) => setSelectedState(val === "__all__" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select state..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All States</SelectItem>
+                  <SelectItem value="__all__">All States</SelectItem>
                   {stateOptions.map((state) => (
-                    <SelectItem key={state.code} value={state.name}>
+                    <SelectItem key={state.code} value={state.name || `state-${state.code}`}>
                       {state.name}
                     </SelectItem>
                   ))}
@@ -281,17 +281,17 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
             <div className="space-y-2">
               <Label>District</Label>
               <Select 
-                value={selectedDistrict} 
-                onValueChange={setSelectedDistrict}
+                value={selectedDistrict || "__all__"} 
+                onValueChange={(val) => setSelectedDistrict(val === "__all__" ? "" : val)}
                 disabled={!selectedState}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select district..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Districts</SelectItem>
+                  <SelectItem value="__all__">All Districts</SelectItem>
                   {districtOptions.map((district) => (
-                    <SelectItem key={district.code} value={district.name}>
+                    <SelectItem key={district.code} value={district.name || `district-${district.code}`}>
                       {district.name}
                     </SelectItem>
                   ))}
@@ -303,17 +303,17 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
             <div className="space-y-2">
               <Label>Subdistrict</Label>
               <Select 
-                value={selectedSubdistrict} 
-                onValueChange={setSelectedSubdistrict}
+                value={selectedSubdistrict || "__all__"} 
+                onValueChange={(val) => setSelectedSubdistrict(val === "__all__" ? "" : val)}
                 disabled={!selectedDistrict}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select subdistrict..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Subdistricts</SelectItem>
+                  <SelectItem value="__all__">All Subdistricts</SelectItem>
                   {subdistrictOptions.map((subdistrict) => (
-                    <SelectItem key={subdistrict.code} value={subdistrict.name}>
+                    <SelectItem key={subdistrict.code} value={subdistrict.name || `subdistrict-${subdistrict.code}`}>
                       {subdistrict.name}
                     </SelectItem>
                   ))}
@@ -324,14 +324,14 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
             {/* Level Filter */}
             <div className="space-y-2">
               <Label>Level</Label>
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+              <Select value={selectedLevel || "__all__"} onValueChange={(val) => setSelectedLevel(val === "__all__" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select level..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="__all__">All Levels</SelectItem>
                   {levelOptions.map((level) => (
-                    <SelectItem key={level} value={level}>
+                    <SelectItem key={level} value={level || `level-${level}`}>
                       {level}
                     </SelectItem>
                   ))}
@@ -342,14 +342,14 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
             {/* TRU Filter */}
             <div className="space-y-2">
               <Label>Area Type (TRU)</Label>
-              <Select value={selectedTRU} onValueChange={setSelectedTRU}>
+              <Select value={selectedTRU || "__all__"} onValueChange={(val) => setSelectedTRU(val === "__all__" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select area type..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="__all__">All Types</SelectItem>
                   {truOptions.map((tru) => (
-                    <SelectItem key={tru} value={tru}>
+                    <SelectItem key={tru} value={tru || `tru-${tru}`}>
                       {tru}
                     </SelectItem>
                   ))}
@@ -365,7 +365,7 @@ const CensusAdvancedFilters: React.FC<CensusAdvancedFiltersProps> = ({
               <div className="px-2">
                 <Slider
                   value={populationRange}
-                  onValueChange={setPopulationRange}
+                  onValueChange={(val) => setPopulationRange([val[0], val[1]])}
                   min={populationBounds[0]}
                   max={populationBounds[1]}
                   step={Math.max(1, Math.floor((populationBounds[1] - populationBounds[0]) / 1000))}
